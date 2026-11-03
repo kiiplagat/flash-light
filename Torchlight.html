@@ -1,0 +1,308 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>Torchlight</title>
+<style>
+/*
+  Layout: a single centered control — a large circular switch — on a field that
+  itself becomes the light source (screen-flood fallback) when no hardware
+  torch is available. Status text sits below, instructions collapse under it.
+*/
+:root {
+  --bg: #0b0d10;
+  --panel: #14171b;
+  --ink: #eef1f4;
+  --ink-dim: #9aa3ad;
+  --accent: #ffb84d;
+  --accent-dim: #6b5230;
+  --ring: #2a2f36;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+
+html, body { height: 100%; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding-block: 24px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  text-align: center;
+  transition: background 0.4s ease;
+  overflow-x: hidden;
+}
+
+body.flood-on {
+  background: #ffffff;
+  color: #11131a;
+}
+
+.eyebrow {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  margin: 0 0 6px;
+}
+
+body.flood-on .eyebrow { color: #6b6f7a; }
+
+h1 {
+  font-family: 'Fraunces', Georgia, serif;
+  font-weight: 600;
+  font-size: clamp(22px, 5vw, 28px);
+  margin: 0 0 40px;
+  letter-spacing: -0.01em;
+}
+
+.switch {
+  position: relative;
+  width: 168px;
+  height: 168px;
+  max-width: 60vw;
+  max-height: 60vw;
+  border-radius: 50%;
+  border: 2px solid var(--ring);
+  background: radial-gradient(circle at 50% 42%, #1c2026, var(--panel));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  transition: box-shadow 0.3s ease, border-color 0.3s ease, background 0.3s ease, transform 0.08s ease;
+}
+
+.switch:active { transform: scale(0.97); }
+
+.switch.on {
+  border-color: var(--accent);
+  background: radial-gradient(circle at 50% 42%, #3a2d14, var(--panel));
+  box-shadow: 0 0 60px 8px rgba(255, 184, 77, 0.35), 0 0 0 1px rgba(255, 184, 77, 0.2) inset;
+}
+
+body.flood-on .switch {
+  border-color: #d9b878;
+  background: radial-gradient(circle at 50% 42%, #fff6e0, #ffffff);
+  box-shadow: 0 0 40px 4px rgba(217, 184, 120, 0.5);
+}
+
+.bolt {
+  width: 46px;
+  height: 46px;
+  fill: var(--ink-dim);
+  transition: fill 0.3s ease;
+}
+
+.switch.on .bolt { fill: var(--accent); }
+body.flood-on .switch .bolt { fill: #c99a3e; }
+
+.status {
+  margin-top: 28px;
+  font-size: 15px;
+  color: var(--ink-dim);
+  min-height: 20px;
+}
+
+body.flood-on .status { color: #6b6f7a; }
+
+.status.on { color: var(--accent); font-weight: 500; }
+body.flood-on .status.on { color: #a6762a; }
+
+.price-tag {
+  margin-top: 18px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--ink-dim);
+  background: var(--panel);
+  border: 1px solid var(--ring);
+  border-radius: 999px;
+  padding: 6px 14px;
+}
+
+body.flood-on .price-tag {
+  background: #f1ede1;
+  border-color: #e4dcc4;
+  color: #6b6f7a;
+}
+
+.price-tag strong { color: var(--ink); font-weight: 600; }
+body.flood-on .price-tag strong { color: #11131a; }
+
+.note {
+  margin-top: 36px;
+  max-width: 320px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--ink-dim);
+  opacity: 0.75;
+}
+
+body.flood-on .note { color: #6b6f7a; }
+
+.note button {
+  background: none;
+  border: none;
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+  font: inherit;
+  padding: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; }
+}
+</style>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600&family=Inter:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<p class="eyebrow" id="eyebrow">Off</p>
+<h1>Torchlight</h1>
+
+<div class="switch" id="switch" role="button" tabindex="0" aria-pressed="false" aria-label="Toggle light">
+  <svg class="bolt" id="bolt" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+    <path d="M13 2 3 14h7l-1 8 10-13h-7l1-7z"/>
+  </svg>
+</div>
+
+<p class="status" id="status">Tap to turn on</p>
+<div class="price-tag" id="priceTag" hidden>Free to use · <strong>free to turn off</strong></div>
+
+<p class="note" id="note"></p>
+
+<script>
+(function () {
+  var switchEl = document.getElementById('switch');
+  var statusEl = document.getElementById('status');
+  var eyebrowEl = document.getElementById('eyebrow');
+  var noteEl = document.getElementById('note');
+  var priceTag = document.getElementById('priceTag');
+
+  var state = { on: false, mode: null, track: null, stream: null };
+
+  function setNote(mode) {
+    if (mode === 'torch') {
+      noteEl.textContent = 'Using your camera flash as a torch. Closing this page turns it off.';
+    } else if (mode === 'flood') {
+      noteEl.textContent = 'Your device has no controllable camera flash here, so the screen is standing in as a light source. Turn your brightness up for more throw.';
+    } else {
+      noteEl.textContent = '';
+    }
+  }
+
+  function setOn(on) {
+    state.on = on;
+    switchEl.classList.toggle('on', on);
+    switchEl.setAttribute('aria-pressed', on ? 'true' : 'false');
+    statusEl.classList.toggle('on', on);
+    statusEl.textContent = on ? 'On' : 'Tap to turn on';
+    eyebrowEl.textContent = on ? 'On' : 'Off';
+    priceTag.hidden = !on;
+  }
+
+  function stopTorch() {
+    if (state.track) {
+      try { state.track.stop(); } catch (e) {}
+    }
+    if (state.stream) {
+      try { state.stream.getTracks().forEach(function (t) { t.stop(); }); } catch (e) {}
+    }
+    state.track = null;
+    state.stream = null;
+  }
+
+  function floodOff() {
+    document.body.classList.remove('flood-on');
+  }
+
+  function turnOff() {
+    if (state.mode === 'torch') {
+      try {
+        state.track.applyConstraints({ advanced: [{ torch: false }] });
+      } catch (e) {}
+      stopTorch();
+    } else if (state.mode === 'flood') {
+      floodOff();
+    }
+    setOn(false);
+  }
+
+  async function tryTorch() {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return false;
+    try {
+      var stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: 'environment' } }
+      });
+      var track = stream.getVideoTracks()[0];
+      var caps = track.getCapabilities ? track.getCapabilities() : {};
+      if (!caps.torch) {
+        stream.getTracks().forEach(function (t) { t.stop(); });
+        return false;
+      }
+      await track.applyConstraints({ advanced: [{ torch: true }] });
+      state.stream = stream;
+      state.track = track;
+      state.mode = 'torch';
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function floodOn() {
+    document.body.classList.add('flood-on');
+    state.mode = 'flood';
+  }
+
+  async function turnOn() {
+    statusEl.textContent = 'Finding your flash…';
+    var gotTorch = await tryTorch();
+    if (!gotTorch) {
+      floodOn();
+    }
+    setNote(state.mode);
+    setOn(true);
+  }
+
+  function toggle() {
+    if (state.on) {
+      turnOff();
+    } else {
+      turnOn();
+    }
+  }
+
+  switchEl.addEventListener('click', toggle);
+  switchEl.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      toggle();
+    }
+  });
+
+  window.addEventListener('pagehide', function () {
+    if (state.mode === 'torch') {
+      try { state.track.applyConstraints({ advanced: [{ torch: false }] }); } catch (e) {}
+      stopTorch();
+    }
+  });
+})();
+</script>
+
+</body></html>
